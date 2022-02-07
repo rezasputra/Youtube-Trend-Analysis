@@ -1,0 +1,214 @@
+---
+title: "Indonesian Trend Youtube Exploration"
+author: "by Reza Syahputra"
+date: "1/29/2022"
+output: html_document
+---
+
+# Import Library
+
+```{r}
+library(ggplot2) 
+library(plotly)
+library(glue)
+library(tidyr)
+```
+
+
+# Read Data
+
+```{r}
+main <- read.csv("data_input/ind_youtube.csv")
+head(main)
+```
+
+# Glimpse Data
+```{r}
+str(main)
+```
+
+# Exploration
+
+## Kategori Trending Video Indonesia 2021-2022
+```{r}
+trend_cat <- main %>% 
+  group_by(category_id) %>% 
+  summarise(Jumlah = n()) %>% 
+  ungroup() %>% 
+  arrange(desc(Jumlah)) %>% 
+  mutate(label = glue("Category: {category_id}
+                      {Jumlah} Video"))
+```
+
+```{r}
+trend_cat_plot <- ggplot(trend_cat, aes(
+    x = Jumlah, 
+    y = reorder(category_id, Jumlah),
+    text = label)) +
+  geom_col(aes(fill = Jumlah)) +
+  scale_fill_gradient(low = "#CC6600", high = "#660000") +
+  theme_get() +
+  labs(
+    x = "Jumlah Video",
+    y = NULL
+  ) + 
+  theme(
+    legend.position = "none"
+  )
+  
+ggplotly(trend_cat_plot, tooltip="text")
+```
+
+## Top Average Views of Entertainment
+```{r}
+pop_chan_views <- main %>% 
+  filter(category_id == "Entertainment") %>% 
+  group_by(channel_name) %>% 
+  summarise(Avg_views = mean(view)) %>% 
+  ungroup() %>% 
+  arrange(desc(Avg_views)) %>%
+  head(10) %>% 
+  mutate(Avg_views = round(Avg_views/1000000, 2),
+         label = glue("Channel: {channel_name}
+                      {Avg_views} views")) 
+```
+
+
+
+```{r}
+pop_chan_views_plot <- ggplot(pop_chan_views, aes(
+    x = Avg_views, 
+    y = reorder(channel_name, Avg_views),
+    text = label)) +
+  geom_col(aes(fill = Avg_views)) +
+  scale_fill_gradient(low = "#CC6600", high = "#660000") +
+  theme_get() +
+  labs(
+    x = "Average Views (in Millions)",
+    y = NULL
+  ) + 
+  theme(
+    legend.position = "none"
+  )
+  
+ggplotly(pop_chan_views_plot, tooltip="text")
+```
+
+## Top Average Likes of Entertainment
+```{r}
+pop_chan_likes <- main %>% 
+  filter(category_id == "Entertainment") %>% 
+  group_by(channel_name) %>% 
+  summarise(Avg_likes = mean(like)) %>% 
+  ungroup() %>% 
+  arrange(desc(Avg_likes)) %>%
+  head(10) %>% 
+  mutate(Avg_likes = round(Avg_likes/100000, 2),
+         label = glue("Channel: {channel_name}
+                      {Avg_likes} likes")) 
+```
+
+```{r}
+pop_chan_likes_plot <- ggplot(pop_chan_likes, aes(
+    x = Avg_likes, 
+    y = reorder(channel_name, Avg_likes),
+    text = label)) +
+  geom_col(aes(fill = Avg_likes)) +
+  scale_fill_gradient(low = "#CC6600", high = "#660000") +
+  theme_get() +
+  labs(
+    x = "Average Likes (in Millions)",
+    y = NULL
+  ) + 
+  theme(
+    legend.position = "none"
+  )
+  
+ggplotly(pop_chan_likes_plot, tooltip="text")
+```
+
+## Viewers Activity on Entertainment
+```{r}
+acitivty_tren <- main %>% 
+  filter(category_id == "Entertainment") %>% 
+  group_by(publish_hour) %>% 
+  summarise(Avg_views = mean(view)) %>% 
+  mutate(Avg_views = round(Avg_views/1000000, 3),
+         label = glue("At {publish_hour}
+                      Avg Views {Avg_views}"))
+```
+
+```{r}
+acitivty_tren_plot <- ggplot(acitivty_tren, aes(
+  x = publish_hour,
+  y = Avg_views)) +
+  geom_line(group = 1, col = "red") +
+  geom_point(aes(text = label), col = "black") +
+  labs(
+    x = "Publish Hour",
+    y = "Mean Views (in Millions)"
+  ) +
+  theme_minimal()
+
+ggplotly(acitivty_tren_plot, tooltip = "text")
+```
+
+## Popularity Based on Views/Likes of Entertainment
+```{r}
+means_per_likes <- main %>% 
+  filter(category_id == "Entertainment") %>% 
+  group_by(channel_name) %>% 
+  summarise(avg_views_per_likes = round(mean(view/like))) %>% 
+  ungroup() %>% 
+  arrange(desc(avg_views_per_likes)) %>% 
+  head(10) %>% 
+  mutate(label = glue("Channel: {channel_name}
+                      {avg_views_per_likes}"))
+  
+  
+```
+
+```{r}
+means_per_likes_plot <- ggplot(means_per_likes, aes(
+    x = avg_views_per_likes, 
+    y = reorder(channel_name, avg_views_per_likes),
+    text = label)) +
+  geom_col(aes(fill = avg_views_per_likes)) +
+  scale_fill_gradient(low = "#CC6600", high = "#660000") +
+  theme_get() +
+  labs(
+    x = "Popularity Views/Likes",
+    y = NULL
+  ) + 
+  theme(
+    legend.position = "none"
+  )
+  
+ggplotly(means_per_likes_plot, tooltip="text")
+```
+
+## Correlation Views Likes and Comment
+```{r}
+corr_vlc <- main %>% 
+  filter(category_id == "Entertainment") %>% 
+  group_by(channel_name) %>% 
+  summarise(avg_views = round(mean(view)),
+            avg_likes = round(mean(like)),
+            avg_comments = round(mean(comment))) 
+```
+```{r}
+corr_vlc_plot <- ggplot(corr_vlc, aes(
+    x = avg_views, 
+    y = avg_likes,
+    size = avg_comments)) +
+  geom_point(col = "#CC6600") +
+  theme_get() +
+  labs(
+    x = "Views",
+    y = "Likes",
+    size = "Comments"
+  ) 
+  
+ggplotly(corr_vlc_plot)
+```
+

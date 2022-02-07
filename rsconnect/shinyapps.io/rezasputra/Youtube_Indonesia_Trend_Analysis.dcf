@@ -1,0 +1,13 @@
+name: Youtube_Indonesia_Trend_Analysis
+title: Youtube_Indonesia_Trend_Analysis
+username:
+account: rezasputra
+server: shinyapps.io
+hostUrl: https://api.shinyapps.io/v1
+appId: 5540014
+bundleId: 5522574
+url: https://rezasputra.shinyapps.io/Youtube_Indonesia_Trend_Analysis/
+when: 1643506600.49446
+lastSyncTime: 1643506600.49449
+asMultiple: FALSE
+asStatic: FALSE

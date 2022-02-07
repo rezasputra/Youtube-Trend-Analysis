@@ -1,0 +1,138 @@
+---
+title: "Indonesain Trend Youtube"
+author: "by Reza Syahputra"
+date: "1/29/2022"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+# Overview
+This document contain cleasing dataset of Indonesian Trend Youtube
+
+# Read Dataset
+```{r}
+main <- read.csv("data_input/trending.csv")
+head(main)
+```
+
+# Glimpse Data
+```{r}
+str(main)
+```
+
+# Drop Column
+
+```{r}
+main <- main %>% 
+  select(-c(video_id, channel_id, description, thumbnail_url, 
+            thumbnail_width, thumbnail_height, tags, live_status, 
+            local_title, local_description, dimension, definition, caption,
+            license_status, allowed_region, blocked_region, favorite))
+str(main)
+head(main)
+```
+
+# Find Unique Title
+```{r}
+trending_date <- main[order(main$trending_time),]
+idx_unik <- match(unique(trending_date$title), trending_date$title)
+main <- trending_date[idx_unik, ]
+```
+
+
+# Convert Column Type
+```{r}
+main <- main %>% 
+  mutate(publish_time = ymd_hms(main$publish_time, tz = "Asia/Jakarta"),
+         trending_time = ymd_hms(main$trending_time, tz = "Asia/Jakarta"))
+str(main)
+```
+
+# Feature Engineering
+
+> Extract Year, Month, Day, and Time to trend
+
+```{r}
+main <- main %>% 
+  mutate(publish_year = year(publish_time),
+         publish_month = month(publish_time, label = T, abbr = F),
+         publish_day = wday(publish_time, label = T, abbr = F),
+         publish_date = date(publish_time),
+         publish_hour = hour(publish_time),
+         time_to_trend = (date(trending_time) - date(publish_time))
+         )
+```
+
+> Convert Hour
+
+```{r}
+convert_hour <- function(x){
+  
+  if (x >= 0 & x <= 8) { 
+    x <- "12am to 8am"
+  }
+  else if (x > 8 & x <= 15) {
+    x <- "8am to 3pm"
+  }
+  else {
+    x <- "3pm to 12am"
+  }
+  
+  return(x)
+}
+```
+
+```{r}
+main$publish_period <- sapply(main$publish_hour, convert_hour)
+```
+> Convert Category
+
+```{r}
+main$category_id <- sapply(X = as.character(main$category_id), 
+       FUN = switch,
+       
+       "1" = "Film and Animation",
+       "2" = "Autos and Vehicles", 
+       "10" = "Music", 
+       "15" = "Pets and Animals", 
+       "17" = "Sports",
+       "18" = "Short Movies",
+       "19" = "Travel and Events", 
+       "20" = "Gaming", 
+       "21" = "Videoblogging",
+       "22" = "People and Blogs", 
+       "23" = "Comedy",
+       "24" = "Entertainment", 
+       "25" = "News and Politics",
+       "26" = "Howto and Style", 
+       "27" = "Education",
+       "28" = "Science and Technology", 
+       "29" = "Undefined",
+       "30" = "Movies",
+       "31" = "Anime/Animation",
+       "32" = "Action/Adventure",
+       "33" = "Classics",
+       "34" = "Comedy",
+       "35" = "Documentary",
+       "36" = "Drama",
+       "37" = "Family",
+       "38" = "Foreign",
+       "39" = "Horror",
+       "40" = "Sci-Fi/Fantasy",
+       "41" = "Thriller",
+       "42" = "Shorts",
+       "43" = "Shows",
+       "44" = "Trailers"
+       )
+
+main$category_id <- as.factor(main$category_id)
+```
+
+
+# Save to csv files
+```{r}
+write.csv(main, "data_input/ind_youtube.csv", row.names = F)
+```
